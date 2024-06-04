@@ -1,6 +1,7 @@
-# lib/employee.py
+
 from __init__ import CURSOR, CONN
 from department import Department
+
 
 class Employee:
 
@@ -51,7 +52,7 @@ class Employee:
 
     @department_id.setter
     def department_id(self, department_id):
-        if type(department_id) is int and Department.find_by_id(department_id):
+        if isinstance(department_id, int) and Department.find_by_id(department_id):
             self._department_id = department_id
         else:
             raise ValueError(
@@ -102,8 +103,7 @@ class Employee:
             SET name = ?, job_title = ?, department_id = ?
             WHERE id = ?
         """
-        CURSOR.execute(sql, (self.name, self.job_title,
-                             self.department_id, self.id))
+        CURSOR.execute(sql, (self.name, self.job_title, self.department_id, self.id))
         CONN.commit()
 
     def delete(self):
@@ -135,7 +135,7 @@ class Employee:
     def instance_from_db(cls, row):
         """Return an Employee object having the attribute values from the table row."""
 
-        # Check the dictionary for  existing instance using the row's primary key
+        # Check the dictionary for existing instance using the row's primary key
         employee = cls.all.get(row[0])
         if employee:
             # ensure attributes match row values in case local instance was modified
@@ -179,12 +179,18 @@ class Employee:
         sql = """
             SELECT *
             FROM employees
-            WHERE name is ?
+            WHERE name = ?
         """
 
         row = CURSOR.execute(sql, (name,)).fetchone()
         return cls.instance_from_db(row) if row else None
 
     def reviews(self):
-        """Return list of reviews associated with current employee"""
-        pass
+        from review import Review
+        sql = """
+            SELECT * FROM reviews
+            WHERE employee_id = ?
+        """
+        CURSOR.execute(sql, (self.id,))
+        rows = CURSOR.fetchall()
+        return [Review.instance_from_db(row) for row in rows]
